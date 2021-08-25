@@ -2,6 +2,7 @@ from multiprocessing import Process
 from sys import argv
 import numpy as np
 
+
 def get_line_count(filename: str):
     import subprocess
     return int(subprocess.run(["wc", "-l", filename], capture_output=True).stdout.decode('UTF-8').split(' ')[0])
@@ -45,45 +46,44 @@ def main():
 
         v.stop_flag.set()
         vn_proc.join()
-    
+
     print("plotting")
     print(np.nanmean(accel, axis=0))
     accel += accel_correction
     print(np.nanmean(accel, axis=0))
-    
+
     v = np.cumsum(accel, axis=0) * dt
     x = np.cumsum(v, axis=0) * dt
 
-
     import matplotlib.pyplot as plt
-    fig, ax =  plt.subplots(3,2)
+    fig, ax = plt.subplots(3, 2)
 
     ax[0, 0].plot(accel[:, 0], color='r')
     ax[0, 0].plot(accel[:, 1], color='g')
     ax[0, 0].plot(accel[:, 2], color='b')
     ax[0, 0].set_title("Accel")
-    
+
     ax[0, 1].plot(orien[:, 0], color='r')
     ax[0, 1].plot(orien[:, 1], color='g')
     ax[0, 1].plot(orien[:, 2], color='b')
     ax[0, 1].set_title("orien")
-    
+
     ax[1, 0].set_aspect('equal', adjustable='datalim')
     ax[1, 0].plot(x[:, 0] * 100, x[:, 1] * 100)
     ax[1, 0].set_title("XY Path (cm)")
-    
+
     ax[1, 1].plot(x[:, 0], color='r')
     ax[1, 1].plot(x[:, 1], color='g')
     ax[1, 1].plot(x[:, 2], color='b')
     ax[1, 1].set_title("displacement")
-    
+
     ax[2, 0].plot(v[:, 0], color='r')
     ax[2, 0].plot(v[:, 1], color='g')
     ax[2, 0].plot(v[:, 2], color='b')
     ax[2, 0].set_title("VElocity")
 
     plt.show()
-    
+
     np.savetxt('imu_test_1.csv', accel)
 
 
