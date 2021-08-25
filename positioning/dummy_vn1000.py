@@ -9,6 +9,7 @@ else:
 
 
 class VN1000:
+    g: float = 9.572136
     def __init__(self, filename='./data/vn1000/square_motion_with_turn.csv', sleep_time=0, queue=Queue(),
                  stop_flag=Event()):
         self.filename = filename
@@ -18,6 +19,7 @@ class VN1000:
         self.stop_flag = stop_flag
 
     def __enter__(self):
+        print(f"Opening {self.filename}")
         self.loader = iter(FileLoader(self.filename, skip_rows=1, chunk_size=1))
         return self
 

@@ -7,6 +7,7 @@ import serial
 
 
 class VN1000:
+    g: float = 9.572136
     def __init__(self, port='/dev/ttyUSB0', baud=115200, sleep_time=0.001, queue=Queue(), stop_flag=Event()):
         self.port = port  # Note: Make sure use has permissions to access the serial port
         self.baud = baud
