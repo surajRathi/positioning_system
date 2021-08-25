@@ -44,7 +44,7 @@ class VN1000:
 
                 fields = line.split(',')
 
-                angles = fields[1:4]  # yaw, pitch, roll
+                angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame 
                 mag = fields[4:7]
                 accel = fields[7:10]
                 alpha = fields[10:13]
@@ -75,11 +75,12 @@ if __name__ == '__main__':
     #     stop.set()
     #     vn_proc.join()
     
+    n_samples = int(1e3)
     with VN1000() as v:
         vn_proc = Process(target=v.stream)
         vn_proc.start()
-        for i in range(int(1e2)):
-            print(v.queue.get())
+        for i in range(n_samples):
+            print(*(str(x).zfill(5) for x in v.queue.get()))  # v.queue.qsize(),
         v.stop_flag.set()
         vn_proc.join()
     
