@@ -1,8 +1,8 @@
-from positioning.dummy_picoscope import Picoscope
-from positioning.zero_crossing import Est_ZC_stage_1
-from positioning.triangulate import gps_solve
-
 import numpy as np
+
+from positioning.dummy_picoscope import Picoscope
+from positioning.triangulate import gps_solve
+from positioning.zero_crossing import Est_ZC_stage_1
 
 
 def main():

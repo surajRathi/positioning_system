@@ -1,6 +1,7 @@
-import numpy as np
 import itertools
-from scipy.signal import butter, lfilter, freqz, medfilt, hann, convolve, welch, get_window, tukey, gaussian, hilbert, \
+
+import numpy as np
+from scipy.signal import lfilter, hilbert, \
     iirfilter
 
 
