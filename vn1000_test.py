@@ -22,9 +22,9 @@ def main():
 
     fs = 40  # TODO: Check
     dt = 1.0 / fs
+    accel_correction = -np.array([0.1752296, 0.1025151, -9.581222])
 
-
-    num_samples = int(1e3) if filename is None else get_line_count(filename)
+    num_samples = int(1e4) if filename is None else get_line_count(filename)
     accel = np.zeros((num_samples, 3,))
     orien = np.zeros((num_samples, 3,))
     accel.fill(np.nan)
@@ -45,19 +45,14 @@ def main():
 
         v.stop_flag.set()
         vn_proc.join()
+    
     print("plotting")
-    print(np.nanmean(accel[:,2]))
-
-    accel[:,2] += device.g
-    # v = np.trapz(accel, dx=dt)
-    # x = np.trapz(v, dx=dt)
-
-    # yaw = orien[0]
-    # c_yaw = np.cos(yaw)
-    # s_yaw = np.sin(yaw)
+    print(np.nanmean(accel, axis=0))
+    accel += accel_correction
+    print(np.nanmean(accel, axis=0))
+    
     v = np.cumsum(accel, axis=0) * dt
     x = np.cumsum(v, axis=0) * dt
-
 
 
     import matplotlib.pyplot as plt
@@ -74,8 +69,8 @@ def main():
     ax[0, 1].set_title("orien")
     
     ax[1, 0].set_aspect('equal', adjustable='datalim')
-    ax[1, 0].plot(x[:, 0], x[:, 1])
-    ax[1, 0].set_title("XY Path")
+    ax[1, 0].plot(x[:, 0] * 100, x[:, 1] * 100)
+    ax[1, 0].set_title("XY Path (cm)")
     
     ax[1, 1].plot(x[:, 0], color='r')
     ax[1, 1].plot(x[:, 1], color='g')
