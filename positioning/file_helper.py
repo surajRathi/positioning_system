@@ -14,7 +14,7 @@ class FileLoader:
             return self.load()
         else:
             return self
-    
+
     def __next__(self):
         arr = np.loadtxt(self.filename, skiprows=self.i, max_rows=self.chunk_size, delimiter=self.delimiter)
         self.i += self.chunk_size
@@ -29,6 +29,7 @@ class FileLoader:
 def write_csv(filename: str, arr: np.array, delimiter: str = ','):
     np.savetxt(filename, arr, delimiter=delimiter)
 
+
 class ChunkedWriter:
     # TODO: Make sure the write number of columns
     def __init__(self, filename, header=None, delimiter=','):
@@ -42,14 +43,14 @@ class ChunkedWriter:
         open(self.filename, 'w').close()
         self.file = open(self.filename, 'a')
         if self.header is not None:
-            print(self.header, f=self.file)
+            print(self.header, file=self.file)
         return self
 
     def write(self, arr):
         if self.file is None:
-            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedWrite('output.csv') as cw: ```")
+            raise Exception(
+                "Use the context manager interface with this object, i.e. ```with ChunkedWrite('output.csv') as cw: ```")
         np.savetxt(self.file, arr, delimiter=self.delimiter)
-        
 
-    def __exit__(self, exc_type, exc_val, exc_tb): 
+    def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()

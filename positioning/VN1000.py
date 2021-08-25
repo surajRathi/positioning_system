@@ -81,6 +81,6 @@ if __name__ == '__main__':
         vn_proc = Process(target=v.stream)
         vn_proc.start()
         for i in range(n_samples):
-            print(*(str(x).zfill(5) for x in v.queue.get()))  # v.queue.qsize(),
+            print(*(str(x).zfill(6) for x in v.queue.get()))  # v.queue.qsize(),
         v.stop_flag.set()
         vn_proc.join()
