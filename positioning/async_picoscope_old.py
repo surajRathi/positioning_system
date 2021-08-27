@@ -9,7 +9,7 @@ from picosdk.ps4000a import ps4000a as ps
 from multiprocessing import Queue, Event
 
 class Picoscope:
-    def __init__(self, sleep_time=0.001, queue=Queue(), stop_flag=Event()):
+    def __init__(self, sleep_time=0.001,buffer_size = 1000, queue=Queue(), stop_flag=Event()):
         print("Initiating Picoscope")
         self.queue = queue
         self.stop_flag = stop_flag
@@ -23,7 +23,7 @@ class Picoscope:
         self.connected = False
         self.initialized = False
         self.buffers_initialized = False
-        self.buffer_size = 1000
+        self.buffer_size = buffer_size
         self.channel_range = 7
 
         self._buffers = {}
@@ -172,16 +172,20 @@ class Picoscope:
         self.connected = True
         self._setup_channels()
         self._initialize_buffers()
+        return self
 
     def stream(self):
-        while not self.stop_flag():
+        while not self.stop_flag.is_set():
             self.stream_n(self.buffer_size * 1000)
 
     def stream_n(self, n: int):
         if not self.buffers_initialized:
             raise Exception("Picoscope not initialized, use a context manager to load it")
 
-        total_samples = n
+        total_samples = int(n)
+
+        print(f"streaming {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds")
+
 
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
@@ -190,6 +194,7 @@ class Picoscope:
         autoStopOn = 1
         downsample_ratio = 1  # No downsampling:
 
+        print("going to run streaming")
         self.status["runStreaming"] = ps.ps4000aRunStreaming(self.chandle,
                                                              ctypes.byref(sample_interval),
                                                              sample_units,
@@ -199,7 +204,7 @@ class Picoscope:
                                                              downsample_ratio,
                                                              ps.PS4000A_RATIO_MODE['PS4000A_RATIO_MODE_NONE'],
                                                              self.buffer_size)
-
+        print("ps4000aRunStreaming")
         pf.assert_pico_ok(self.status["runStreaming"])
 
         actualSampleInterval = sample_interval.value
@@ -227,7 +232,8 @@ class Picoscope:
         def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
             global wasCalledBack  ## TODO: FIX?
             wasCalledBack = True
-            data = np.empty((self.buffer_size, 5,))
+            print(startIndex, startIndex + noOfSamples, overflow)
+            data = np.empty((self.buffer_size, 5,), dtype=np.int16)
             data[:, 0] = self._buffers['A'][:]
             data[:, 1] = self._buffers['B'][:]
             data[:, 2] = self._buffers['C'][:]
@@ -239,11 +245,13 @@ class Picoscope:
 
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
+        print("Starting streaming")
 
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while not self.stop_flag.is_set():
             wasCalledBack = False
             self.status["getStreamingLastestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
+            print(wasCalledBack, self.status["getStreamingLastestValues"])
             if not wasCalledBack:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while
                 # before trying again.
@@ -259,3 +267,30 @@ class Picoscope:
         # Disconnect the scope
         self.status["close"] = ps.ps4000aCloseUnit(self.chandle)
         pf.assert_pico_ok(self.status["close"])
+
+def main():
+    from itertools import count
+    from multiprocessing import Process
+
+    from positioning.file_helper import ChunkedWriter
+    
+    filename = "picoscope_sample_1.csv"
+
+    seconds = 1  # int or None
+    fs = 1e6  # TODO: Check
+
+    with Picoscope(buffer_size=100000) as v, ChunkedWriter(filename, header="A,B,C,D,E") as out:
+        vn_proc = Process(target=v.stream_n, args=(fs * seconds,))
+        vn_proc.start()
+        print('Starting picoscope')
+        for i in range(int(seconds * fs / v.buffer_size)):
+            d = v.queue.get()
+            print('a')
+            out.write(d)
+
+        v.stop_flag.set()
+        vn_proc.join()
+
+
+if __name__ == '__main__':
+    main()

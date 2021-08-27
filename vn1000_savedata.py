@@ -8,10 +8,11 @@ from positioning.file_helper import ChunkedWriter
 
 
 def main():
-    filename = "vn1000_sample_1.csv"
+    filename = "vn1000_very_long_sample.csv"
 
-    seconds = 10  # int or None
-    fs = 40  # TODO: Check
+    seconds = 3600  # int or None
+    fs = 80  # TODO: Check
+    print(f"Reading {fs * seconds} samples.")
 
     data = np.zeros((1, 6,))
 
@@ -22,6 +23,8 @@ def main():
             d = v.queue.get()
             data[0, :] = d
             out.write(data)
+            if i % 800 == 0:
+                print(i)
 
         v.stop_flag.set()
         vn_proc.join()
