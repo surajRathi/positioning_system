@@ -8,14 +8,14 @@ from picosdk.ps4000a import ps4000a as ps
 
 
 class Picoscope:
-    def __init__(self):
+    def __init__(self, buffer_size = 1000):
         print("Initiating Picoscope")
         self.chandle = ctypes.c_int16()
         self.status = {}
         self.connected = False
         self.initialized = False
         self.buffers_initialized = False
-        self.buffer_size = 1000
+        self.buffer_size = int(buffer_size)
         self.channel_range = 7
 
         self._buffers = {}
@@ -165,12 +165,16 @@ class Picoscope:
         self._setup_channels()
         self._initialize_buffers()
 
-    def stream(self):
+        return self
+
+    def stream(self, n_samples):
         if not self.buffers_initialized:
             raise Exception("Picoscope not initialized, use a context manager to load it")
 
-        num_buffers_to_receive = 1000
+        num_buffers_to_receive = int(n_samples // self.buffer_size)
         total_samples = self.buffer_size * num_buffers_to_receive
+
+        print(f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds")
 
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
@@ -214,6 +218,7 @@ class Picoscope:
             wasCalledBack = True
             destEnd = nextSample + noOfSamples
             sourceEnd = startIndex + noOfSamples
+            # print(startIndex, sourceEnd)
             bufferCompleteA[nextSample:destEnd] = self._buffers['A'][startIndex:sourceEnd]
             bufferCompleteB[nextSample:destEnd] = self._buffers['B'][startIndex:sourceEnd]
             bufferCompleteC[nextSample:destEnd] = self._buffers['C'][startIndex:sourceEnd]
@@ -225,16 +230,18 @@ class Picoscope:
 
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
-
+        print("Started streaming")
+        start = time.time()
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while nextSample < total_samples and not autoStopOuter:
             wasCalledBack = False
             self.status["getStreamingLastestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
+            # print(wasCalledBack)
             if not wasCalledBack:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while
                 # before trying again.
-                time.sleep(0.01)
-
+                time.sleep(0.005)
+        print("Done streaming", time.time() - start)
         # Find maximum ADC count value
         # handle = chandle
         # pointer to value = ctypes.byref(maxADC)
@@ -273,3 +280,26 @@ class Picoscope:
         # Disconnect the scope
         self.status["close"] = ps.ps4000aCloseUnit(self.chandle)
         pf.assert_pico_ok(self.status["close"])
+
+def main():
+    from multiprocessing import Process
+
+    from positioning.file_helper import write_csv
+    
+    filename = "picoscope_sample_1.csv"
+
+    seconds = 4  # int or None
+    fs = 1e6
+
+    # Buffer size:
+    # 10000  => ~30% extra time
+    # 100000 => ~<1% extra time
+    data = None
+    with Picoscope(buffer_size=100000) as v:
+        data = v.stream(10000000) #fs * seconds)
+        data = np.vstack(data)
+    
+    write_csv(filename, data.T, header="A,B,C,D,E")
+
+if __name__ == '__main__':
+    main()

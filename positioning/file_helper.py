@@ -26,8 +26,8 @@ class FileLoader:
         return np.loadtxt(self.filename, skiprows=self.i, max_rows=self.chunk_size, delimiter=self.delimiter)
 
 
-def write_csv(filename: str, arr: np.array, delimiter: str = ','):
-    np.savetxt(filename, arr, delimiter=delimiter)
+def write_csv(filename: str, arr: np.array, delimiter: str = ',', header=''):
+    np.savetxt(filename, arr, delimiter=delimiter, header = header)
 
 
 class ChunkedWriter:
