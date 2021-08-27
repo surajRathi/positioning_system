@@ -15,11 +15,11 @@ def main():
     window_size = 500
     multiplier = 10  # std_noise_multiplier
 
-    # indices = [
-    #     Est_ZC_stage_1(channel, window_size, fs, multiplier)
-    #     for channel in data
-    # ]
-    indices = Est_ZC_stage_1(data, window_size, fs, multiplier)
+    indices = [
+        Est_ZC_stage_1(channel, window_size, fs, multiplier)
+        for channel in data
+    ]
+    # indices = Est_ZC_stage_1(data, window_size, fs, multiplier)
 
     zero_index = indices[0]
     dists = np.array([(index - zero_index) * v_sound / fs for index in indices[1:]])
