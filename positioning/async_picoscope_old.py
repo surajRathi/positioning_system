@@ -1,21 +1,20 @@
 import ctypes
 import time
+from multiprocessing import Queue, Event
 
 import numpy as np
 import picosdk.functions as pf
 from picosdk.errors import PicoSDKCtypesError
 from picosdk.ps4000a import ps4000a as ps
 
-from multiprocessing import Queue, Event
 
 class Picoscope:
-    def __init__(self, sleep_time=0.001,buffer_size = 1000, queue=Queue(), stop_flag=Event()):
+    def __init__(self, sleep_time=0.001, buffer_size=1000, queue=Queue(), stop_flag=Event()):
         print("Initiating Picoscope")
         self.queue = queue
         self.stop_flag = stop_flag
 
         self.sleep_time = sleep_time
-
 
         self.chandle = ctypes.c_int16()
         self.status = {}
@@ -184,8 +183,8 @@ class Picoscope:
 
         total_samples = int(n)
 
-        print(f"streaming {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds")
-
+        print(
+            f"streaming {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds")
 
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
@@ -228,7 +227,7 @@ class Picoscope:
         # channelInputRanges = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]
         # vRange = channelInputRanges[self.channel_range]
         vRange = 2000
-        
+
         def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
             global wasCalledBack  ## TODO: FIX?
             wasCalledBack = True
@@ -241,7 +240,6 @@ class Picoscope:
             data[:, 4] = self._buffers['E'][:]
             data = data * vRange / maxADC.value
             self.queue.put(data)
-
 
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
@@ -257,7 +255,6 @@ class Picoscope:
                 # before trying again.
                 time.sleep(self.sleep_time)
 
-
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("Closing Picoscope")
         # Stop the scope
@@ -268,12 +265,12 @@ class Picoscope:
         self.status["close"] = ps.ps4000aCloseUnit(self.chandle)
         pf.assert_pico_ok(self.status["close"])
 
+
 def main():
-    from itertools import count
     from multiprocessing import Process
 
     from positioning.file_helper import ChunkedWriter
-    
+
     filename = "picoscope_sample_1.csv"
 
     seconds = 1  # int or None

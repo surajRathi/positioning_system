@@ -8,7 +8,7 @@ from picosdk.ps4000a import ps4000a as ps
 
 
 class Picoscope:
-    def __init__(self, buffer_size = 100000):
+    def __init__(self, buffer_size=100000):
         print("Initiating Picoscope")
         self.chandle = ctypes.c_int16()
         self.status = {}
@@ -174,7 +174,7 @@ class Picoscope:
         num_buffers_to_receive = int(n_samples // self.buffer_size)
         total_samples = self.buffer_size * num_buffers_to_receive
 
-        print(f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds and {num_buffers_to_receive} buffers.")
+        # print(f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds and {num_buffers_to_receive} buffers.")
 
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
@@ -198,7 +198,7 @@ class Picoscope:
         actualSampleInterval = sample_interval.value
         actualSampleIntervalNs = actualSampleInterval * 1000
 
-        print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
+        # print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
 
         # Find maximum ADC count value
         # handle = chandle
@@ -210,7 +210,7 @@ class Picoscope:
         vRange = channelInputRanges[self.channel_range]
 
         conversion_factor = vRange / maxADC.value
-        
+
         # Inline the pf.adc2mV
         def np_adc2mV(arr: np.array) -> np.array:
             return arr * conversion_factor
@@ -222,8 +222,6 @@ class Picoscope:
         bufferCompleteC = np.zeros(shape=total_samples, dtype=np.int16)
         bufferCompleteD = np.zeros(shape=total_samples, dtype=np.int16)
         bufferCompleteE = np.zeros(shape=total_samples, dtype=np.int16)
-
-
 
         global nextSample, autoStopOuter, wasCalledBack
         nextSample = 0
@@ -245,11 +243,9 @@ class Picoscope:
             if autoStop:
                 autoStopOuter = True
 
-
-
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
-        print("Started streaming")
+        # print("Started streaming")
         start = time.time()
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while nextSample < total_samples and not autoStopOuter:
@@ -261,8 +257,7 @@ class Picoscope:
                 # before trying again.
                 time.sleep(0.005)
 
-        print("Done streaming", time.time() - start)
-
+        # print("Done streaming", time.time() - start)
 
         return bufferCompleteA, bufferCompleteB, bufferCompleteC, bufferCompleteD, bufferCompleteE
 
@@ -278,34 +273,45 @@ class Picoscope:
         pf.assert_pico_ok(self.status["close"])
 
 
-from multiprocessing import Process, Queue
-def run_pico(queue: Queue, *pico_args):
-    data = None
+from multiprocessing import Event, Process, Queue
+
+
+def run_pico(queue: Queue, stop_flag: Event, *pico_args):
     # Buffer size:
     # 10000  => ~30% extra time
     # 100000 => ~<1% extra time
     with Picoscope(buffer_size=100000, *pico_args) as v:
-        data = v.stream(1000000,) #fs * seconds)
-        queue.put(data)
+        for i in range(10):
+            data = v.stream(1000000, )  # fs * seconds)
+            queue.put(data)
+            if stop_flag.is_set():
+                break
+        else:
+            stop_flag.set()
         print("Put data!")
 
 
 def main():
+    from positioning.file_helper import ChunkedWriter
 
-    from positioning.file_helper import write_csv
-    
-    filename = "picoscope_sample_1.csv"
+    filename = "picoscope_sample_2.csv"
 
     seconds = 4  # int or None
     fs = 1e6
 
     q = Queue()
-    proc = Process(target=run_pico, args=(q,))
-    proc.start()
-    proc.join()
-    print(q.qsize())
+    stop = Event()
 
-    # write_csv(filename, data.T, header="A,B,C,D,E")
+    proc = Process(target=run_pico, args=(q, stop,))
+    proc.start()
+    with ChunkedWriter(filename, header="A,B,C,D,E") as out:
+        while (not stop.is_set()) or (q.qsize() > 0):
+            item = q.get()
+            print("Row Got")
+            out.write(np.vstack(item).T)
+            print("Row Written")
+    proc.join()
+
 
 if __name__ == '__main__':
     main()

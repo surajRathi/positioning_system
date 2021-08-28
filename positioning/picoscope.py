@@ -8,7 +8,7 @@ from picosdk.ps4000a import ps4000a as ps
 
 
 class Picoscope:
-    def __init__(self, buffer_size = 1000):
+    def __init__(self, buffer_size=1000):
         print("Initiating Picoscope")
         self.chandle = ctypes.c_int16()
         self.status = {}
@@ -281,11 +281,10 @@ class Picoscope:
         self.status["close"] = ps.ps4000aCloseUnit(self.chandle)
         pf.assert_pico_ok(self.status["close"])
 
-def main():
-    from multiprocessing import Process
 
+def main():
     from positioning.file_helper import write_csv
-    
+
     filename = "picoscope_sample_1.csv"
 
     seconds = 4  # int or None
@@ -296,10 +295,11 @@ def main():
     # 100000 => ~<1% extra time
     data = None
     with Picoscope(buffer_size=100000) as v:
-        data = v.stream(10000000) #fs * seconds)
+        data = v.stream(10000000)  # fs * seconds)
         data = np.vstack(data)
-    
+
     write_csv(filename, data.T, header="A,B,C,D,E")
+
 
 if __name__ == '__main__':
     main()

@@ -8,6 +8,7 @@ import serial
 
 class VN1000:
     g: float = 9.572136
+
     def __init__(self, port='/dev/ttyUSB0', baud=115200, sleep_time=0.001, queue=Queue(), stop_flag=Event()):
         self.port = port  # Note: Make sure use has permissions to access the serial port
         self.baud = baud
@@ -16,7 +17,7 @@ class VN1000:
         self.serial = None
         self.queue = queue
         self.stop_flag = stop_flag
-        self.strs = ['']
+        self.received = ['']
 
     def __enter__(self):
         print("Opening VN1000")
@@ -33,11 +34,11 @@ class VN1000:
                 continue
             except OSError:  # Disconnected 
                 break
-            self.strs[0] += lines[0]
-            self.strs.extend(lines[1:])
+            self.received[0] += lines[0]
+            self.received.extend(lines[1:])
 
-            while len(self.strs) > 1:
-                line = self.strs.pop(0)
+            while len(self.received) > 1:
+                line = self.received.pop(0)
                 if len(line) != 121 or line[0:6] != '$VNYMR':
                     continue
                 # if not crc_check(line):

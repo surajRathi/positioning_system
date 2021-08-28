@@ -1,5 +1,6 @@
 from multiprocessing import Process
 from sys import argv
+
 import numpy as np
 
 

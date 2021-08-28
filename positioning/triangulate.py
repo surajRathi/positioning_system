@@ -2,23 +2,23 @@ import numpy as np
 from scipy.optimize import minimize
 
 
-def gps_solve(distances_to_station:np.array, stations_coordinates:np.array):
+def gps_solve(distances_from_stations: np.array, stations_coordinates: np.array):
     # TODO Check for close form solution
     def error(x, c, r):
-        return np.sum((np.linalg.norm(x-c, axis=1) - r)**2)
+        return np.sum((np.linalg.norm(x - c, axis=1) - r) ** 2)
         # return sum([(np.linalg.norm(x - c[i]) - r[i]) ** 2 for i in range(len(c))])
 
     l = len(stations_coordinates)
-    S = sum(distances_to_station)
+    S = sum(distances_from_stations)
 
     # Initial guess is weighted average (by distance) of station coordinates
 
     # W = [((l - 1) * S) / (S - w) for w in distances_to_station]
     # x0 = sum([W[i] * stations_coordinates[i] for i in range(l)])
-    x0 = np.dot(distances_to_station, stations_coordinates) / np.sum(distances_to_station)
+    x0 = np.dot(distances_from_stations, stations_coordinates) / np.sum(distances_from_stations)
 
     # optimize distance from signal origin to border of spheres
-    return minimize(error, x0, args=(stations_coordinates, distances_to_station), method='Nelder-Mead').x
+    return minimize(error, x0, args=(stations_coordinates, distances_from_stations), method='Nelder-Mead').x
 
 
 # Pinger co-ordinates = [1 ,1, 1]

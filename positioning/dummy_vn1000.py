@@ -10,6 +10,7 @@ else:
 
 class VN1000:
     g: float = 9.572136
+
     def __init__(self, filename='./data/vn1000/square_motion_with_turn.csv', sleep_time=0, queue=Queue(),
                  stop_flag=Event()):
         self.filename = filename
@@ -48,5 +49,5 @@ if __name__ == '__main__':
                 print(*(str(x).zfill(6) for x in v.queue.get(block=False)))  # v.queue.qsize(),
             except queue.Empty:
                 pass
-        
+
         vn_proc.join()

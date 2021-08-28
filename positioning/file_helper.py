@@ -27,7 +27,7 @@ class FileLoader:
 
 
 def write_csv(filename: str, arr: np.array, delimiter: str = ',', header=''):
-    np.savetxt(filename, arr, delimiter=delimiter, header = header)
+    np.savetxt(filename, arr, delimiter=delimiter, header=header)
 
 
 class ChunkedWriter:
