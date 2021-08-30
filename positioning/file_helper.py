@@ -31,7 +31,7 @@ def write_csv(filename: str, arr: np.array, delimiter: str = ',', header=''):
 
 
 class ChunkedWriter:
-    # TODO: Make sure the write number of columns
+    # TODO: Make sure the right number of columns in each chunk
     def __init__(self, filename, header=None, delimiter=','):
         self.filename = filename
         self.delimiter = delimiter
@@ -48,9 +48,49 @@ class ChunkedWriter:
 
     def write(self, arr):
         if self.file is None:
-            raise Exception(
-                "Use the context manager interface with this object, i.e. ```with ChunkedWrite('output.csv') as cw: ```")
+            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedWrite('output.csv') as cw: ```")
         np.savetxt(self.file, arr, delimiter=self.delimiter)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.file.close()
+
+class ChunkedNPStackWriter:
+    def __init__(self, filename, delimiter=','):
+        self.filename = filename
+        self.file = None
+
+    def __enter__(self):
+        print("Opening npstack file")
+        open(self.filename, 'w').close()
+        self.file = open(self.filename, 'a')
+        return self
+
+    def write(self, arr):
+        if self.file is None:
+            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackWriter('output.csv') as cw: ```")
+        np.save(self.file, arr)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.file.close()
+
+
+class ChunkedNPStackReader:
+    def __init__(self, filename, delimiter=','):
+        self.filename = filename
+        self.file = None
+
+    def __enter__(self):
+        print("Opening npstack file")
+        self.file = open(self.filename, 'r')
+        return self
+    
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.file is None:
+            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackReader('output.csv') as cr: ```")
+        return np.read(self.file)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()
