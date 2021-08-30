@@ -1,4 +1,4 @@
-# A Very rudimentry Serial based driver for the VectorNav VN-1000
+# A Very rudimentary Serial based driver for the VectorNav VN-1000
 
 import time
 from multiprocessing import Queue, Event
@@ -45,7 +45,7 @@ class VN1000:
                 #     continue
 
                 fields = line.split(',')
-                
+
                 # msg_type = fields[0]  # $VNYMR
                 angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame 
                 # mag = fields[4:7]
@@ -56,7 +56,6 @@ class VN1000:
                 # TODO anything more efficient than __float__ conversion?
                 self.queue.put(tuple(map(float, angles + accel)))
                 # TODO: Stop if queue is too big, either integrate the accel values, or drop,
-
 
             time.sleep(self.sleep_time)
 

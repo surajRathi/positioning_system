@@ -10,7 +10,7 @@ from picosdk.ps4000a import ps4000a as ps
 
 
 class Picoscope:
-    def __init__(self, buffer_size=100000, queue=Queue(), stop_flag = Event()):
+    def __init__(self, buffer_size=100000, queue=Queue(), stop_flag=Event()):
         print("Initiating Picoscope")
         self.chandle = ctypes.c_int16()
         self.status = {}
@@ -208,7 +208,6 @@ class Picoscope:
         vRange = channelInputRanges[self.channel_range]
         conversion_factor = vRange / maxADC.value
 
-
         global autoStopOuter, wasCalledBack
         autoStopOuter = False
         wasCalledBack = False
@@ -231,14 +230,14 @@ class Picoscope:
 
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
-        
+
         # print("Started streaming")
         start = time.time()
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while not autoStopOuter:
             wasCalledBack = False
             self.status["getStreamingLastestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
-            
+
             if not wasCalledBack:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while
                 # before trying again.
@@ -259,13 +258,12 @@ class Picoscope:
         print("<<< Closed Picoscope")
 
 
-
 def run_pico(num_samples: int, queue: Queue, stop_flag: Event, buffer_size=100000, *pico_args):
     # Buffer size:
     # 10000  => ~30% extra time
     # 100000 => ~<1% extra time
     with Picoscope(buffer_size=buffer_size, queue=queue, stop_flag=stop_flag, *pico_args) as v:
-        v.stream(num_samples) 
+        v.stream(num_samples)
 
 
 def main():
@@ -283,7 +281,7 @@ def main():
     proc = Process(target=run_pico, args=(10000000, q, stop, 1000000))
     proc.start()
     with ChunkedWriter(filename, header="A,B,C,D,E") as out:
-        while (not stop.is_set()) or (q.qsize() > 0): # TODO: fix this, mix q.get with stop.is_set
+        while (not stop.is_set()) or (q.qsize() > 0):  # TODO: fix this, mix q.get with stop.is_set
             item = q.get()
             out.write(item)
             print(f"Wrote {item.shape[0]} more rows.")
