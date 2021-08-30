@@ -7,7 +7,7 @@ from positioning.zero_crossing import Est_ZC_stage_1
 
 def main():
     data = None
-    with Picoscope() as p:
+    with Picoscope('./data/fishhook_moving_one/store_channeldata_PositionStep_0.csv') as p:
         data = p.stream()
     print(data.shape)
     v_sound = 1500
@@ -16,8 +16,8 @@ def main():
     multiplier = 10  # std_noise_multiplier
 
     indices = [
-        Est_ZC_stage_1(channel, window_size, fs, multiplier)
-        for channel in data.T
+        Est_ZC_stage_1(channel.ravel(), window_size, fs, multiplier)
+        for channel in np.hsplit(data, 5)
     ]
     print(indices)
     # indices = Est_ZC_stage_1(data, window_size, fs, multiplier)

@@ -62,7 +62,7 @@ class ChunkedNPStackWriter:
     def __enter__(self):
         print("Opening npstack file")
         open(self.filename, 'w').close()
-        self.file = open(self.filename, 'a')
+        self.file = open(self.filename, 'ab')
         return self
 
     def write(self, arr):
@@ -81,7 +81,7 @@ class ChunkedNPStackReader:
 
     def __enter__(self):
         print("Opening npstack file")
-        self.file = open(self.filename, 'r')
+        self.file = open(self.filename, 'rb')
         return self
     
     def __iter__(self):
@@ -90,7 +90,13 @@ class ChunkedNPStackReader:
     def __next__(self):
         if self.file is None:
             raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackReader('output.csv') as cr: ```")
-        return np.read(self.file)
+        try:
+            return np.load(self.file)
+        except ValueError:
+            raise StopIteration()
+
+    def stream(self):
+        return np.vstack([arr for arr in self])
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()

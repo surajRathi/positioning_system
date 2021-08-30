@@ -266,9 +266,9 @@ def run_pico(num_samples: int, queue: Queue, stop_flag: Event, buffer_size=10000
 
 
 def main():
-    from positioning.file_helper import ChunkedWriter
+    from positioning.file_helper import ChunkedNPStackWriter
 
-    filename = "picoscope_sample_2.csv"
+    filename = "picoscope_sample_3.nps"
 
     seconds = 4  # int or None
     fs = 1e6
@@ -279,11 +279,11 @@ def main():
 
     proc = Process(target=run_pico, args=(samples, q, stop, 1000000))
     proc.start()
-    with ChunkedWriter(filename, header="A,B,C,D,E") as out:
+    with ChunkedNPStackWriter(filename) as out:
         while (not stop.is_set()) or (q.qsize() > 0):  # TODO: fix this, mix q.get with stop.is_set
             item = q.get()
             out.write(item)
-            print(f"Wrote {item.shape[0]} more rows.")
+            print(f"Wrote {item.shape[0]} more rows")  #, {q.qsize()} chunks waiting.")
     print("Done writing data")
     proc.join()
 
