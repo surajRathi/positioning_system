@@ -78,7 +78,7 @@ def Est_ZC_stage_1(signal, winsize, fs, std_noise_multiplier, run_plot=False, pl
         ind_n_max_group_len_counts_of_true = ind_n_max_group_len_counts_of_true.T
 
         # how many maxs (top-n) need to be estimated?
-        n_max = int(len(group_len_counts_of_true) * (n_max_p) / 100)
+        n_max = int(len(group_len_counts_of_true) * n_max_p / 100)
         if n_max <= 2:
             n_max = int(len(group_len_counts_of_true))
 

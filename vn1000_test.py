@@ -14,7 +14,6 @@ def main():
     if len(argv) == 2:
         filename = argv[1]
 
-    device = None
     if filename is None:
         from positioning.VN1000 import VN1000
         device = VN1000()

@@ -198,7 +198,6 @@ class Picoscope:
 
         pf.assert_pico_ok(self.status["runStreaming"])
 
-        actualSampleInterval = sample_interval.value
 
         # Find maximum ADC count value
         maxADC = ctypes.c_int16()
@@ -258,11 +257,11 @@ class Picoscope:
         print("<<< Closed Picoscope")
 
 
-def run_pico(num_samples: int, queue: Queue, stop_flag: Event, buffer_size=100000, *pico_args):
+def run_pico(num_samples: int, queue: Queue, stop_flag: Event, buffer_size=100000):
     # Buffer size:
     # 10000  => ~30% extra time
     # 100000 => ~<1% extra time
-    with Picoscope(buffer_size=buffer_size, queue=queue, stop_flag=stop_flag, *pico_args) as v:
+    with Picoscope(buffer_size=buffer_size, queue=queue, stop_flag=stop_flag) as v:
         v.stream(num_samples)
 
 
@@ -273,12 +272,12 @@ def main():
 
     seconds = 4  # int or None
     fs = 1e6
-    samples = int(seconds * fs)
+    samples = 10000000  # int(seconds * fs)
 
     q = Queue()
     stop = Event()
 
-    proc = Process(target=run_pico, args=(10000000, q, stop, 1000000))
+    proc = Process(target=run_pico, args=(samples, q, stop, 1000000))
     proc.start()
     with ChunkedWriter(filename, header="A,B,C,D,E") as out:
         while (not stop.is_set()) or (q.qsize() > 0):  # TODO: fix this, mix q.get with stop.is_set
