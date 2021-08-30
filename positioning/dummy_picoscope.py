@@ -15,7 +15,7 @@ class Picoscope:
 
     def stream(self):
         arr = np.loadtxt(self.filename, skiprows=1, delimiter=',')
-        return [ch.reshape((-1,)) for ch in np.hsplit(arr, arr.shape[1])]
+        return arr  # [ch.reshape((-1,)) for ch in np.hsplit(arr, arr.shape[1])]
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("Closing Picoscope")

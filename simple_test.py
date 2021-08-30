@@ -9,7 +9,7 @@ def main():
     data = None
     with Picoscope() as p:
         data = p.stream()
-
+    print(data.shape)
     v_sound = 1500
     fs = 1e6
     window_size = 500
@@ -17,8 +17,9 @@ def main():
 
     indices = [
         Est_ZC_stage_1(channel, window_size, fs, multiplier)
-        for channel in data
+        for channel in data.T
     ]
+    print(indices)
     # indices = Est_ZC_stage_1(data, window_size, fs, multiplier)
 
     zero_index = indices[0]

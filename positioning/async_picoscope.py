@@ -1,6 +1,8 @@
 import ctypes
 import time
 
+from multiprocessing import Event, Process, Queue
+
 import numpy as np
 import picosdk.functions as pf
 from picosdk.errors import PicoSDKCtypesError
@@ -8,7 +10,7 @@ from picosdk.ps4000a import ps4000a as ps
 
 
 class Picoscope:
-    def __init__(self, buffer_size=100000):
+    def __init__(self, buffer_size=100000, queue=Queue(), stop_flag = Event()):
         print("Initiating Picoscope")
         self.chandle = ctypes.c_int16()
         self.status = {}
@@ -19,6 +21,8 @@ class Picoscope:
         self.channel_range = 7
 
         self._buffers = {}
+        self.queue = queue
+        self.stop_flag = stop_flag
 
         # TODO Enable certain channels
 
@@ -147,8 +151,6 @@ class Picoscope:
         self.buffers_initialized = True
 
     def __enter__(self):
-        print("Connecting to Picoscope")
-
         self.status["openunit"] = ps.ps4000aOpenUnit(ctypes.byref(self.chandle), None)
         try:
             pf.assert_pico_ok(self.status["openunit"])
@@ -165,6 +167,7 @@ class Picoscope:
         self._setup_channels()
         self._initialize_buffers()
 
+        print(">>> Connected to Picoscope")
         return self
 
     def stream(self, n_samples):
@@ -174,7 +177,7 @@ class Picoscope:
         num_buffers_to_receive = int(n_samples // self.buffer_size)
         total_samples = self.buffer_size * num_buffers_to_receive
 
-        # print(f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds and {num_buffers_to_receive} buffers.")
+        print(f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds and {num_buffers_to_receive} buffers.")
 
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
@@ -196,73 +199,55 @@ class Picoscope:
         pf.assert_pico_ok(self.status["runStreaming"])
 
         actualSampleInterval = sample_interval.value
-        actualSampleIntervalNs = actualSampleInterval * 1000
-
-        # print("Capturing at sample interval %s ns" % actualSampleIntervalNs)
 
         # Find maximum ADC count value
-        # handle = chandle
-        # pointer to value = ctypes.byref(maxADC)
         maxADC = ctypes.c_int16()
         self.status["maximumValue"] = ps.ps4000aMaximumValue(self.chandle, ctypes.byref(maxADC))
         pf.assert_pico_ok(self.status["maximumValue"])
         channelInputRanges = [10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000, 20000, 50000, 100000, 200000]
         vRange = channelInputRanges[self.channel_range]
-
         conversion_factor = vRange / maxADC.value
 
-        # Inline the pf.adc2mV
-        def np_adc2mV(arr: np.array) -> np.array:
-            return arr * conversion_factor
 
-        # We need a big buffer, not registered with the driver, to keep our complete capture in.
-        # TODO: Can't we just store a list / queue of small buffers?
-        bufferCompleteA = np.zeros(shape=total_samples, dtype=np.int16)
-        bufferCompleteB = np.zeros(shape=total_samples, dtype=np.int16)
-        bufferCompleteC = np.zeros(shape=total_samples, dtype=np.int16)
-        bufferCompleteD = np.zeros(shape=total_samples, dtype=np.int16)
-        bufferCompleteE = np.zeros(shape=total_samples, dtype=np.int16)
-
-        global nextSample, autoStopOuter, wasCalledBack
-        nextSample = 0
+        global autoStopOuter, wasCalledBack
         autoStopOuter = False
         wasCalledBack = False
 
         def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
-            global nextSample, autoStopOuter, wasCalledBack  ## TODO: FIX?
+            global autoStopOuter, wasCalledBack  ## TODO: FIX?
             wasCalledBack = True
-            destEnd = nextSample + noOfSamples
             sourceEnd = startIndex + noOfSamples
-            # print(startIndex, sourceEnd)
-            bufferCompleteA[nextSample:destEnd] = self._buffers['A'][startIndex:sourceEnd] * conversion_factor
-            bufferCompleteB[nextSample:destEnd] = self._buffers['B'][startIndex:sourceEnd] * conversion_factor
-            bufferCompleteC[nextSample:destEnd] = self._buffers['C'][startIndex:sourceEnd] * conversion_factor
-            bufferCompleteD[nextSample:destEnd] = self._buffers['D'][startIndex:sourceEnd] * conversion_factor
-            bufferCompleteE[nextSample:destEnd] = self._buffers['E'][startIndex:sourceEnd] * conversion_factor
-            nextSample += noOfSamples
+            if sourceEnd == self.buffer_size:
+                out = np.empty((self.buffer_size, 5), dtype=np.int16)
+                out[:, 0] = self._buffers['A'][:] * conversion_factor
+                out[:, 1] = self._buffers['B'][:] * conversion_factor
+                out[:, 2] = self._buffers['C'][:] * conversion_factor
+                out[:, 3] = self._buffers['D'][:] * conversion_factor
+                out[:, 4] = self._buffers['E'][:] * conversion_factor
+                self.queue.put(out)
+
             if autoStop:
                 autoStopOuter = True
 
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
+        
         # print("Started streaming")
         start = time.time()
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
-        while nextSample < total_samples and not autoStopOuter:
+        while not autoStopOuter:
             wasCalledBack = False
             self.status["getStreamingLastestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
-            # print(wasCalledBack)
+            
             if not wasCalledBack:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while
                 # before trying again.
                 time.sleep(0.005)
+        self.stop_flag.set()
 
         # print("Done streaming", time.time() - start)
 
-        return bufferCompleteA, bufferCompleteB, bufferCompleteC, bufferCompleteD, bufferCompleteE
-
     def __exit__(self, exc_type, exc_val, exc_tb):
-        print("Closing Picoscope")
         # Stop the scope
         self.status["stop"] = ps.ps4000aStop(self.chandle)
         pf.assert_pico_ok(self.status["stop"])
@@ -271,24 +256,16 @@ class Picoscope:
         # Disconnect the scope
         self.status["close"] = ps.ps4000aCloseUnit(self.chandle)
         pf.assert_pico_ok(self.status["close"])
+        print("<<< Closed Picoscope")
 
 
-from multiprocessing import Event, Process, Queue
 
-
-def run_pico(queue: Queue, stop_flag: Event, *pico_args):
+def run_pico(num_samples: int, queue: Queue, stop_flag: Event, buffer_size=100000, *pico_args):
     # Buffer size:
     # 10000  => ~30% extra time
     # 100000 => ~<1% extra time
-    with Picoscope(buffer_size=100000, *pico_args) as v:
-        for i in range(10):
-            data = v.stream(1000000, )  # fs * seconds)
-            queue.put(data)
-            if stop_flag.is_set():
-                break
-        else:
-            stop_flag.set()
-        print("Put data!")
+    with Picoscope(buffer_size=buffer_size, queue=queue, stop_flag=stop_flag, *pico_args) as v:
+        v.stream(num_samples) 
 
 
 def main():
@@ -298,18 +275,19 @@ def main():
 
     seconds = 4  # int or None
     fs = 1e6
+    samples = int(seconds * fs)
 
     q = Queue()
     stop = Event()
 
-    proc = Process(target=run_pico, args=(q, stop,))
+    proc = Process(target=run_pico, args=(10000000, q, stop, 1000000))
     proc.start()
     with ChunkedWriter(filename, header="A,B,C,D,E") as out:
-        while (not stop.is_set()) or (q.qsize() > 0):
+        while (not stop.is_set()) or (q.qsize() > 0): # TODO: fix this, mix q.get with stop.is_set
             item = q.get()
-            print("Row Got")
-            out.write(np.vstack(item).T)
-            print("Row Written")
+            out.write(item)
+            print(f"Wrote {item.shape[0]} more rows.")
+    print("Done writing data")
     proc.join()
 
 

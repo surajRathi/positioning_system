@@ -269,7 +269,7 @@ class Picoscope:
         bufferCompleteD = np_adc2mV(bufferCompleteD)
         bufferCompleteE = np_adc2mV(bufferCompleteE)
 
-        return bufferCompleteA, bufferCompleteB, bufferCompleteC, bufferCompleteD, bufferCompleteE
+        return np.vstack([bufferCompleteA, bufferCompleteB, bufferCompleteC, bufferCompleteD, bufferCompleteE]).T
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         print("Closing Picoscope")
@@ -296,9 +296,8 @@ def main():
     data = None
     with Picoscope(buffer_size=100000) as v:
         data = v.stream(10000000)  # fs * seconds)
-        data = np.vstack(data)
 
-    write_csv(filename, data.T, header="A,B,C,D,E")
+    write_csv(filename, data, header="A,B,C,D,E")
 
 
 if __name__ == '__main__':
