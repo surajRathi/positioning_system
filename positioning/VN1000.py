@@ -7,7 +7,7 @@ import serial
 
 
 class VN1000:
-    g: float = 9.572136
+    fs: int = 80
 
     def __init__(self, port='/dev/ttyUSB0', baud=115200, sleep_time=0.001, queue=Queue(), stop_flag=Event()):
         self.port = port  # Note: Make sure use has permissions to access the serial port
@@ -45,17 +45,18 @@ class VN1000:
                 #     continue
 
                 fields = line.split(',')
-
+                
+                # msg_type = fields[0]  # $VNYMR
                 angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame 
-                mag = fields[4:7]
-                accel = fields[7:10]
-                alpha = fields[10:13]
+                # mag = fields[4:7]
+                accel = fields[7:10]  # a_x, a_y, and a_z
+                # alpha = fields[10:13]
+                # checksum = fields[13]
 
-                # TODO dont use float in map
+                # TODO anything more efficient than __float__ conversion?
                 self.queue.put(tuple(map(float, angles + accel)))
                 # TODO: Stop if queue is too big, either integrate the accel values, or drop,
 
-                # print(f"{time.time_ns() % 100000:05}\t{angles}\t{accel}")
 
             time.sleep(self.sleep_time)
 
@@ -66,17 +67,7 @@ class VN1000:
 
 
 if __name__ == '__main__':
-    from multiprocessing import Process, Event, Queue
-
-    # q = Queue()
-    # stop = Event()
-    # with VN1000(queue=q, stop_flag=stop) as v:
-    #     vn_proc = Process(target=v.stream)
-    #     vn_proc.start()
-    #     for i in range(int(1e2)):
-    #         print(q.get())
-    #     stop.set()
-    #     vn_proc.join()
+    from multiprocessing import Process, Queue
 
     n_samples = int(1e3)
     with VN1000() as v:
