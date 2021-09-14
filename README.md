@@ -1,6 +1,3 @@
-
-
-
 For module specific information, see positioning/README.md
 
 main.py :=
