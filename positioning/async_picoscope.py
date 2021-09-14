@@ -198,7 +198,6 @@ class Picoscope:
 
         pf.assert_pico_ok(self.status["runStreaming"])
 
-
         # Find maximum ADC count value
         maxADC = ctypes.c_int16()
         self.status["maximumValue"] = ps.ps4000aMaximumValue(self.chandle, ctypes.byref(maxADC))
@@ -212,7 +211,7 @@ class Picoscope:
         wasCalledBack = False
 
         def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
-            global autoStopOuter, wasCalledBack  ## TODO: FIX?
+            global autoStopOuter, wasCalledBack  # TODO: FIX?
             wasCalledBack = True
             sourceEnd = startIndex + noOfSamples
             if sourceEnd == self.buffer_size:
@@ -235,7 +234,7 @@ class Picoscope:
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while not autoStopOuter:
             wasCalledBack = False
-            self.status["getStreamingLastestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
+            self.status["getStreamingLatestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
 
             if not wasCalledBack:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while
@@ -250,7 +249,7 @@ class Picoscope:
         self.status["stop"] = ps.ps4000aStop(self.chandle)
         pf.assert_pico_ok(self.status["stop"])
 
-        # TODO: For some reason it isnt disconnecting
+        # TODO: For some reason it isn't disconnecting
         # Disconnect the scope
         self.status["close"] = ps.ps4000aCloseUnit(self.chandle)
         pf.assert_pico_ok(self.status["close"])

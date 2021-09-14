@@ -80,7 +80,7 @@ def main():
     ax[2, 0].plot(v[:, 0], color='r')
     ax[2, 0].plot(v[:, 1], color='g')
     ax[2, 0].plot(v[:, 2], color='b')
-    ax[2, 0].set_title("VElocity")
+    ax[2, 0].set_title("Velocity")
 
     plt.show()
 

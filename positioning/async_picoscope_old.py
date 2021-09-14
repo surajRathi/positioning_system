@@ -229,7 +229,7 @@ class Picoscope:
         vRange = 2000
 
         def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
-            global wasCalledBack  ## TODO: FIX?
+            global wasCalledBack  # TODO: FIX?
             wasCalledBack = True
             print(startIndex, startIndex + noOfSamples, overflow)
             data = np.empty((self.buffer_size, 5,), dtype=np.int16)

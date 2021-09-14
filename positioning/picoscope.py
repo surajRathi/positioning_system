@@ -214,7 +214,7 @@ class Picoscope:
         wasCalledBack = False
 
         def streaming_callback(handle, noOfSamples, startIndex, overflow, triggerAt, triggered, autoStop, param):
-            global nextSample, autoStopOuter, wasCalledBack  ## TODO: FIX?
+            global nextSample, autoStopOuter, wasCalledBack  # TODO: FIX?
             wasCalledBack = True
             destEnd = nextSample + noOfSamples
             sourceEnd = startIndex + noOfSamples
@@ -235,7 +235,7 @@ class Picoscope:
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while nextSample < total_samples and not autoStopOuter:
             wasCalledBack = False
-            self.status["getStreamingLastestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
+            self.status["getStreamingLatestValues"] = ps.ps4000aGetStreamingLatestValues(self.chandle, cFuncPtr, None)
             # print(wasCalledBack)
             if not wasCalledBack:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while

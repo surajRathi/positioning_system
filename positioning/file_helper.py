@@ -54,6 +54,7 @@ class ChunkedWriter:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()
 
+
 class ChunkedNPStackWriter:
     def __init__(self, filename, delimiter=','):
         self.filename = filename

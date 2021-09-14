@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def Picoscope(filename: str, *args, **kwargs):
     extn = filename[filename.rfind('.'):]
     if extn == '.csv':
@@ -7,6 +8,7 @@ def Picoscope(filename: str, *args, **kwargs):
     if extn == '.nps':
         from positioning.file_helper import ChunkedNPStackReader
         return ChunkedNPStackReader(filename, *args, **kwargs) 
+
 
 class _Picoscope:
     def __init__(self, filename='./data/fishhook_moving_one/store_channeldata_PositionStep_0.csv'):

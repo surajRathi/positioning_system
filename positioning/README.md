@@ -1,6 +1,6 @@
 picoscope.py, dummy_picoscope.py := 
-    Export class `Picoscope` which is a context manager providing the `stream` funciton to recieve data as a tuple of numpy arrays.
-    It currently provides readings in very very large batches
+    Export class `Picoscope` which is a context manager providing the `stream` function to receive data as a tuple of numpy arrays.
+    It currently provides readings in very large batches
     TODO: Refactor
 
 async_picoscope.py :=
@@ -11,8 +11,8 @@ vn1000.py, dummy_vn1000.py :=
     It currently provides readings one at a time.
 
 zero_crossing.py :=
-    Exports `Est_ZC_stage_1` this takes the signal, winsize, fs, and std_noise_multiplier. Returns the index of start of sound wave.
-    On error: returns zero (i think)
+    Exports `Est_ZC_stage_1` this takes the signal, win_size, fs, and std_noise_multiplier. Returns the index of start of sound wave.
+    On error: returns zero (I think)
     TODO: Requires cleanup
           itertools operations might be replaceable with numpy vectorization
 
