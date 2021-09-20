@@ -179,6 +179,7 @@ class Picoscope:
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
         sample_units = ps.PS4000A_TIME_UNITS['PS4000A_US']
+        assert(sample_units == 1.0)
         max_pre_trigger_samples = 0  # We are not triggering:
         autoStopOn = 1
         downsample_ratio = 1  # No downsampling:
