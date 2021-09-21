@@ -8,7 +8,7 @@ from positioning.file_helper import ChunkedWriter
 
 
 def main():
-    filename = "vn1000_sample.csv"
+    filename = "./data/unsorted/vn1000_sample.csv"
 
     seconds = 60 * 60  # int or None
     print(f"Reading for {seconds} seconds.")
