@@ -1,0 +1,17 @@
+{
+    "Url":"http://192.168.1.107",
+    "ROVUrl":"http://192.168.1.191",
+    "Default":"{\"depth\":\"0.7\",\"temperature\":\"32\"}",
+    "InputImg":"E:/PlanysWork/10 Downloads/Dumps-software/waterlinked pos system codes/Software for waterlinked positioning system/Saudi/Bottom plate arrangement of the three tanks/Fire water tank STD-5-T-2501-006-R2.jpg",
+    "Output":"C:/Users/Ashish/Desktop/",
+    "Size":"{\"height\":\"900\",\"width\":\"900\"}",
+    "RectSize":"{\"height\":\"25\",\"width\":\"25\"}",
+    "Angle":"0",
+    "Origin":"{\"x\":\"24.50\",\"y\":\"12.50\"}",
+    "Point1":"{\"x1\":\"24.50\",\"y1\":\"12.50\"}",
+    "Point2":"{\"x2\":\"23.85\",\"y2\":\"11.85\"}",
+    "Point3":"{\"x3\":\"22.53\",\"y3\":\"12.50\"}",
+    "Point4":"{\"x4\":\"23.85\",\"y4\":\"13.62\"}",
+    "CSVOutput":"C:/Users/Ashish/Desktop/UWPosition.csv",
+    "TrailSize":"5"
+}
