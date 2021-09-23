@@ -1,3 +1,5 @@
+Create a venve (python -m venv) with python 3 and install the requirements.
+
 For module specific information, see positioning/README.md
 
 main.py :=
@@ -14,3 +16,6 @@ vn1000_savedata.py :=
 
 vn1000_test.py :=
     Collect and display imu data as accel, velocity, and position graphs.
+
+Remote URL: https://github.com/suraj-planys/positioning_system.git
+
