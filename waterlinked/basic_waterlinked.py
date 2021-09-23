@@ -9,12 +9,10 @@ from datetime import datetime
 
 import requests
 import websockets
-from multiprocessing import Event, Process, Manager
+
 
 log = logging.getLogger()
 logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-
-from omega import run_omega
 
 
 class ROV:
@@ -25,7 +23,7 @@ class ROV:
         self.temp = 0
         self.Time = ""
 
-    def getposition(self):
+    def get_position(self):
         return self.Time
 
     def get_data(self, url):
@@ -92,40 +90,36 @@ class ROV:
         if r.status_code != 200:
             log.error("Error setting depth: {} {}".format(r.status_code, r.text))
 
+
 def main():
     rov = ROV()
 
+    d = 0.5
+
     rov.url = "http://192.168.1.107"
-    rov.depth = 1
+    rov.depth = d
     rov.temp = 30
-    repeat_time = 1
+    repeat_time = 0.5
+
     t_now = datetime.now()
     t_now = str(t_now.strftime("%H")) + '-' + str(t_now.strftime("%M")) + '-' + str(t_now.strftime("%S"))
 
-    # ROV URL
-    # asyncio.get_event_loop().run_until_complete(hello("192.168.1.127"))
 
-    log.info("Using baseurl: %s depth: %f temperature %f",
-             rov.url, rov.depth, rov.temp)
 
-    m = Manager()
-    depth = m.Value('c_double', 0)
+    log.info("Using baseurl: %s depth: %f temperature %f", rov.url, rov.depth, rov.temp)
 
-    stop_flag = Event()
-    om_proc = Process(target=run_omega, args=('COM7', depth, stop_flag))
 
     print("heelo")
-    with open(f"./data/waterlinked/_{t_now}.csv", mode='a') as file:
+    with open(f"./data/waterlinked/230921_{t_now}.csv", mode='a') as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
         while True:
             log.info('Sending depth')
 
-            d = depth.value
+            rov.depth = d
             rov.set_depth('{}/api/v1/external/depth'.format(rov.url), d, rov.temp)
-            print("depth", d)
             data = rov.get_acoustic_position(rov.url, writer, rov.depth, rov.thickness)
-            # print ("depth",depth)
-            if repeat_time <= 0:
+
+            if repeat_time <= 0:  # Run once
                 break
 
             log.info('Waiting %d seconds', repeat_time)
