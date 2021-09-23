@@ -1,3 +1,5 @@
+import struct
+
 import numpy as np
 
 
@@ -39,7 +41,6 @@ class ChunkedWriter:
         self.file = None
 
     def __enter__(self):
-        print("Opening CSV Files")
         open(self.filename, 'w').close()
         self.file = open(self.filename, 'a')
         if self.header is not None:
@@ -84,7 +85,7 @@ class ChunkedNPStackReader:
         print("Opening npstack file")
         self.file = open(self.filename, 'rb')
         return self
-    
+
     def __iter__(self):
         return self
 
@@ -94,6 +95,64 @@ class ChunkedNPStackReader:
         try:
             return np.load(self.file)
         except ValueError:
+            raise StopIteration()
+
+    def stream(self):
+        return np.vstack([arr for arr in self])
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.file.close()
+
+
+class ChunkedNPTStackWriter:
+    def __init__(self, filename, delimiter=','):
+        self.filename = filename
+        self.file = None
+
+    def __enter__(self):
+        print("Opening npstack_t file")
+        open(self.filename, 'w').close()
+        self.file = open(self.filename, 'ab')
+        return self
+
+    def write(self, t, arr):
+        if self.file is None:
+            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackWriter('output.csv') as cw: ```")
+        # print("Writing npst", t)
+        self.file.write(struct.pack('<d', t))
+        # print("Writing npst", arr.shape)
+
+        np.save(self.file, arr)
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.file.close()
+
+
+class ChunkedNPTStackReader:
+    def __init__(self, filename, delimiter=','):
+        self.filename = filename
+        self.file = None
+        self.time_len = struct.calcsize('<d')
+        self.time_unpack = struct.Struct('<d').unpack_from
+
+    def __enter__(self):
+        print("Opening npstack file")
+        self.file = open(self.filename, 'rb')
+        return self
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.file is None:
+            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackReader('output.csv') as cr: ```")
+        try:
+            t = self.time_unpack(self.file.read(self.time_len))
+            arr = np.load(self.file)
+            return t, arr
+        except ValueError:
+            raise StopIteration()
+        except struct.error:
             raise StopIteration()
 
     def stream(self):
