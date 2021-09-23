@@ -112,18 +112,21 @@ def main():
     print("heelo")
     with open(f"./data/waterlinked/230921_{t_now}.csv", mode='a') as file:
         writer = csv.writer(file, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL)
-        while True:
-            log.info('Sending depth')
+        try:
+            while True:
+                log.info('Sending depth')
 
-            rov.depth = d
-            rov.set_depth('{}/api/v1/external/depth'.format(rov.url), d, rov.temp)
-            data = rov.get_acoustic_position(rov.url, writer, rov.depth, rov.thickness)
+                rov.depth = d
+                rov.set_depth('{}/api/v1/external/depth'.format(rov.url), d, rov.temp)
+                data = rov.get_acoustic_position(rov.url, writer, rov.depth, rov.thickness)
 
-            if repeat_time <= 0:  # Run once
-                break
+                if repeat_time <= 0:  # Run once
+                    break
 
-            log.info('Waiting %d seconds', repeat_time)
-            time.sleep(repeat_time)
+                log.info('Waiting %d seconds', repeat_time)
+                time.sleep(repeat_time)
+        except KeyboardInterrupt:
+            print("Exiting...")
 
 
 if __name__ == "__main__":
