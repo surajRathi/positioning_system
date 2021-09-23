@@ -37,7 +37,7 @@ void setup() {
   PressueSensor.begin();
   Serial1.begin(RS485_SERIAL_BAUD);
   Serial1.println("Startin up...");
-  rs485_delay();
+  delayMicroseconds(COMM_TRANSMISSION_DELAY);
 
   previousMillis = millis();
 }
