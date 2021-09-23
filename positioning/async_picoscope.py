@@ -1,12 +1,17 @@
 import ctypes
+import signal
 import time
 
 from multiprocessing import Event, Process, Queue
+from queue import Empty
 
 import numpy as np
 import picosdk.functions as pf
 from picosdk.errors import PicoSDKCtypesError
 from picosdk.ps4000a import ps4000a as ps
+
+from positioning.counter import Counter
+from positioning.file_helper import ChunkedNPTStackWriter
 
 
 class Picoscope:
@@ -214,6 +219,7 @@ class Picoscope:
             global autoStopOuter, wasCalledBack  # TODO: FIX?
             wasCalledBack = True
             sourceEnd = startIndex + noOfSamples
+
             if sourceEnd == self.buffer_size:
                 out = np.empty((self.buffer_size, 5), dtype=np.int16)
                 out[:, 0] = self._buffers['A'][:] * conversion_factor
@@ -221,7 +227,8 @@ class Picoscope:
                 out[:, 2] = self._buffers['C'][:] * conversion_factor
                 out[:, 3] = self._buffers['D'][:] * conversion_factor
                 out[:, 4] = self._buffers['E'][:] * conversion_factor
-                self.queue.put(out)
+                self.queue.put((time.time(), out))
+                # print(self.queue.qsize())
 
             if autoStop:
                 autoStopOuter = True
@@ -229,7 +236,7 @@ class Picoscope:
         # Convert the python function into a C function pointer.
         cFuncPtr = ps.StreamingReadyType(streaming_callback)
 
-        # print("Started streaming")
+        print("Started streaming")
         start = time.time()
         # Fetch data from the driver in a loop, copying it out of the registered buffers and into our complete one.
         while not autoStopOuter:
@@ -240,7 +247,6 @@ class Picoscope:
                 # If we weren't called back by the driver, this means no data is ready. Sleep for a short while
                 # before trying again.
                 time.sleep(0.005)
-        self.stop_flag.set()
 
         # print("Done streaming", time.time() - start)
 
@@ -256,36 +262,59 @@ class Picoscope:
         print("<<< Closed Picoscope")
 
 
-def run_pico(num_samples: int, queue: Queue, stop_flag: Event, buffer_size=100000):
+def run_pico(queue: Queue, stop_flag: Event):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
     # Buffer size:
     # 10000  => ~30% extra time
     # 100000 => ~<1% extra time
-    with Picoscope(buffer_size=buffer_size, queue=queue, stop_flag=stop_flag) as v:
-        v.stream(num_samples)
+    with Picoscope(buffer_size=100000, queue=queue, stop_flag=stop_flag) as p:
+        while not stop_flag.is_set():
+            p.stream(int(1e6 * 60))
 
 
-def main():
-    from positioning.file_helper import ChunkedNPStackWriter
-
-    filename = "picoscope_sample_3.nps"
-
-    seconds = 4  # int or None
-    fs = 1e6
-    samples = 10000000  # int(seconds * fs)
+def record_pico(filename: str, stop_flag: Event, counter: Counter = Counter()):
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
 
     q = Queue()
-    stop = Event()
+    om_proc = Process(target=run_pico, args=(q, stop_flag))
+    om_proc.start()
+    print("started pico proc")
+    with ChunkedNPTStackWriter(filename) as out:
+        while q.qsize() > 0 or (not stop_flag.is_set()):
+            try:
+                d = q.get(block=False)
+                out.write(*d)
+                counter.inc_pico()
+            except Empty:
+                if stop_flag.is_set():
+                    break
+                time.sleep(0.05)
+        print("done pico read")
+        om_proc.join()
 
-    proc = Process(target=run_pico, args=(samples, q, stop, 1000000))
-    proc.start()
-    with ChunkedNPStackWriter(filename) as out:
-        while (not stop.is_set()) or (q.qsize() > 0):  # TODO: fix this, mix q.get with stop.is_set
-            item = q.get()
-            out.write(item)
-            print(f"Wrote {item.shape[0]} more rows")  #, {q.qsize()} chunks waiting.")
-    print("Done writing data")
-    proc.join()
+# def main():
+#     from positioning.file_helper import ChunkedNPStackWriter
+#
+#     filename = "./data/unsorted/wintest_picoscope_sample.nps"
+#
+#     seconds = 16  # int or None
+#     fs = 1e6
+#     samples = int(seconds * fs)
+#
+#     q = Queue()
+#     stop = Event()
+#
+#     proc = Process(target=run_pico, args=(samples, q, stop))
+#     proc.start()
+#     with ChunkedNPTStackWriter(filename) as out:
+#         while (not stop.is_set()) or (q.qsize() > 0):  # TODO: fix this, mix q.get with stop.is_set
+#             item = q.get()
+#             out.write(item)
+#             print(f"Wrote {item.shape[0]} more rows")  # , {q.qsize()} chunks waiting.")
+#     print("Done writing data")
+#     proc.join()
 
 
 if __name__ == '__main__':
-    main()
+    # main()
+    pass

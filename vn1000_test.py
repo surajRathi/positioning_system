@@ -1,4 +1,4 @@
-from multiprocessing import Process
+from multiprocessing import Process, Queue, Event
 from sys import argv
 
 import numpy as np
@@ -9,17 +9,24 @@ def get_line_count(filename: str):
     return int(subprocess.run(["wc", "-l", filename], capture_output=True).stdout.decode('UTF-8').split(' ')[0])
 
 
+def run_vn1000(queue: Queue, stop_flag: Event, filename=None):
+    if filename is None:
+        from positioning.VN1000 import VN1000
+        device = VN1000(port='COM6', queue=queue, stop_flag=stop_flag)
+    else:
+        from positioning.dummy_vn1000 import VN1000
+        device = VN1000(filename, queue=queue, stop_flag=stop_flag)
+
+    with device as v:
+        v.stream()
+
+    print("Done")
+
+
 def main():
     filename = None
     if len(argv) == 2:
         filename = argv[1]
-
-    if filename is None:
-        from positioning.VN1000 import VN1000
-        device = VN1000()
-    else:
-        from positioning.dummy_vn1000 import VN1000
-        device = VN1000(filename)
 
     fs = 40  # TODO: Check
     dt = 1.0 / fs
@@ -31,23 +38,25 @@ def main():
     accel.fill(np.nan)
     orien.fill(np.nan)
 
-    with device as v:
-        vn_proc = Process(target=v.stream)
-        vn_proc.start()
-        try:
-            for i in range(num_samples):
-                d = np.array(v.queue.get())
-                if d.size == 0:
-                    break
-                orien[i, :] = d[0:3]
-                accel[i, :] = d[3:6]
-        except KeyboardInterrupt:
-            pass
+    q = Queue()
+    stop = Event()
+    vn_proc = Process(target=run_vn1000, args=(q, stop, filename))
+    vn_proc.start()
+    try:
+        for i in range(num_samples):
+            d = np.array(q.get())
+            if d.size == 0:
+                break
+            orien[i, :] = d[0:3]
+            accel[i, :] = d[3:6]
+    except KeyboardInterrupt:
+        pass
 
-        v.stop_flag.set()
+        stop.set()
+        print("Stopping")
         vn_proc.join()
 
-    print("plotting")
+    print("plotting", accel.shape)
     print(np.nanmean(accel, axis=0))
     accel += accel_correction
     print(np.nanmean(accel, axis=0))
