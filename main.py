@@ -2,7 +2,7 @@
 from multiprocessing import Process, Event
 from multiprocessing.managers import BaseManager
 
-from time import time, sleep
+from time import time, sleep, strftime
 import os
 
 from positioning.VN1000 import record_vn1000
@@ -12,10 +12,10 @@ from positioning.omega import record_omega
 
 
 def main():
-    run_name = "test2"
-    dir = f"./data/full/{run_name}/"
-    if not os.path.exists(dir):
-        os.makedirs(dir)
+    run_name = "test_" + strftime('%y_%m_%d-%H-%M_%S')
+    data_dir = f"./data/full/{run_name}/"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
     BaseManager.register('Counter', Counter)
     m = BaseManager()
@@ -27,13 +27,13 @@ def main():
     stop_flag = Event()
 
     vn_proc = Process(target=record_vn1000,
-                      kwargs={"filename": (dir + "imu.csv"), "port": "/dev/ttyUSB0", "stop_flag": stop_flag,
+                      kwargs={"filename": (data_dir + "imu.csv"), "port": "/dev/ttyUSB0", "stop_flag": stop_flag,
                               "counter": counter, })
     # om_proc = Process(target=record_omega,
-    #                   kwargs={"filename": (dir + "pressure.csv"), "port": "/dev/ttyUSB1", "stop_flag": stop_flag,
+    #                   kwargs={"filename": (data_dir + "pressure.csv"), "port": "/dev/ttyUSB1", "stop_flag": stop_flag,
     #                           "counter": counter, })
     pico_proc = Process(target=record_pico,
-                        kwargs={"filename": (dir + "pico.npts"), "stop_flag": stop_flag,
+                        kwargs={"filename": (data_dir + "pico.npts"), "stop_flag": stop_flag,
                                 "counter": counter, })
     vn_proc.start()
     # om_proc.start()
@@ -44,7 +44,6 @@ def main():
         for i in range(100):
             sleep(5)
             print(str(counter))
-            # print(f"{time() - counter.t_start:.2f}\tPico: {counter.pico}\tIMU: {counter.imu}\tPres: {counter.pres}\t")
     except KeyboardInterrupt:
         print("Keyboard Interrupt, stopping.")
         pass
