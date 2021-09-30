@@ -29,14 +29,14 @@ def main():
     vn_proc = Process(target=record_vn1000,
                       kwargs={"filename": (dir + "imu.csv"), "port": "/dev/ttyUSB0", "stop_flag": stop_flag,
                               "counter": counter, })
-    om_proc = Process(target=record_omega,
-                      kwargs={"filename": (dir + "pressure.csv"), "port": "/dev/ttyUSB1", "stop_flag": stop_flag,
-                              "counter": counter, })
+    # om_proc = Process(target=record_omega,
+    #                   kwargs={"filename": (dir + "pressure.csv"), "port": "/dev/ttyUSB1", "stop_flag": stop_flag,
+    #                           "counter": counter, })
     pico_proc = Process(target=record_pico,
                         kwargs={"filename": (dir + "pico.npts"), "stop_flag": stop_flag,
                                 "counter": counter, })
-    om_proc.start()
     vn_proc.start()
+    # om_proc.start()
     pico_proc.start()
 
     print("Started: press Control+C to stop")
@@ -50,7 +50,7 @@ def main():
         pass
 
     stop_flag.set()
-    om_proc.join()
+    # om_proc.join()
     vn_proc.join()
     # pico_proc.join()  # TODO: Figure out how to stop pico streaming, or to start unlimited length streaming
 
