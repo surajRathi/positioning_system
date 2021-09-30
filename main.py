@@ -26,11 +26,11 @@ def main():
 
     stop_flag = Event()
 
-    om_proc = Process(target=record_omega,
-                      kwargs={"filename": (dir + "pressure.csv"), "port": "COM7", "stop_flag": stop_flag,
-                              "counter": counter, })
     vn_proc = Process(target=record_vn1000,
-                      kwargs={"filename": (dir + "imu.csv"), "port": "COM6", "stop_flag": stop_flag,
+                      kwargs={"filename": (dir + "imu.csv"), "port": "/dev/ttyUSB0", "stop_flag": stop_flag,
+                              "counter": counter, })
+    om_proc = Process(target=record_omega,
+                      kwargs={"filename": (dir + "pressure.csv"), "port": "/dev/ttyUSB1", "stop_flag": stop_flag,
                               "counter": counter, })
     pico_proc = Process(target=record_pico,
                         kwargs={"filename": (dir + "pico.npts"), "stop_flag": stop_flag,

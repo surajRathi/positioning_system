@@ -12,7 +12,7 @@ def get_line_count(filename: str):
 def run_vn1000(queue: Queue, stop_flag: Event, filename=None):
     if filename is None:
         from positioning.VN1000 import VN1000
-        device = VN1000(port='COM6', queue=queue, stop_flag=stop_flag)
+        device = VN1000(port='/dev/ttyUSB0', queue=queue, stop_flag=stop_flag)
     else:
         from positioning.dummy_vn1000 import VN1000
         device = VN1000(filename, queue=queue, stop_flag=stop_flag)
