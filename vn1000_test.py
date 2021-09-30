@@ -44,8 +44,9 @@ def main():
     vn_proc.start()
     try:
         for i in range(num_samples):
-            d = np.array(q.get())
-            if d.size == 0:
+            t, d = q.get()
+            d = np.array(d)
+            if len(d) == 0:
                 break
             orien[i, :] = d[0:3]
             accel[i, :] = d[3:6]
