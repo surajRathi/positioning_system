@@ -137,7 +137,14 @@ class ChunkedNPTStackReader:
 
     def __enter__(self):
         print("Opening npstack file")
-        self.file = open(self.filename, 'rb')
+        import io
+        if isinstance(self.filename, io.BufferedReader):
+          array_file = io.BytesIO()
+          array_file.write(self.filename.read())
+          array_file.seek(0)
+          self.file = array_file
+        else:
+          self.file = open(self.filename, 'rb')
         return self
 
     def __iter__(self):
