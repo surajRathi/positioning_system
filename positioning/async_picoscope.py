@@ -202,7 +202,7 @@ class Picoscope:
                                                              self.buffer_size)
 
         pf.assert_pico_ok(self.status["runStreaming"])
-
+        print(f"Getting {sample_interval.value} ns per sample")
         # Find maximum ADC count value
         maxADC = ctypes.c_int16()
         self.status["maximumValue"] = ps.ps4000aMaximumValue(self.chandle, ctypes.byref(maxADC))
