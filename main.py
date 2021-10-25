@@ -8,7 +8,6 @@ import os
 from positioning.VN1000 import record_vn1000
 from positioning.async_picoscope import record_pico
 from positioning.counter import Counter
-from positioning.omega import record_omega
 
 
 def main():
