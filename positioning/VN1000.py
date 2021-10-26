@@ -12,7 +12,7 @@ from positioning.file_helper import ChunkedWriter
 
 
 class VN1000:
-    fs: int = 40
+    fs: int = 50
 
     def __init__(self, port='/dev/ttyUSB0', baud=115200, sleep_time=0.001, queue=Queue(), stop_flag=Event()):
         self.port = port  # Note: Make sure use has permissions to access the serial port
@@ -43,24 +43,40 @@ class VN1000:
             self.received.extend(lines[1:])
 
             while len(self.received) > 1:
-                line = self.received.pop(0)
-                if len(line) != 121 or line[0:6] != '$VNYMR':
+                line = self.received.pop(0).strip()
+                if len(line) != 93 or line[0:6] != '$VNYIA':
                     continue
-                # if not crc_check(line):
-                #     continue
 
                 fields = line.split(',')
-
-                # msg_type = fields[0]  # $VNYMR
-                angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame 
-                # mag = fields[4:7]
-                accel = fields[7:10]  # a_x, a_y, and a_z
-                # alpha = fields[10:13]
-                # checksum = fields[13]
+                # msg_type = fields[0]  # $VNYIA
+                angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame
+                accel = fields[4:7]  # IN NED frame !!!!!!!
+                yaw_rate = fields[7:10]
+                # checksum = fields[10]
 
                 # TODO anything more efficient than __float__ conversion?
                 self.queue.put((time.time(), tuple(map(float, angles + accel))))
                 # TODO: Stop if queue is too big, either integrate the accel values, or drop,
+
+            # while len(self.received) > 1:
+            #     line = self.received.pop(0)
+            #     if len(line) != 121 or line[0:6] != '$VNYMR':
+            #         continue
+            #     # if not crc_check(line):
+            #     #     continue
+            #
+            #     fields = line.split(',')
+            #
+            #     # msg_type = fields[0]  # $VNYMR
+            #     angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame
+            #     # mag = fields[4:7]
+            #     accel = fields[7:10]  # a_x, a_y, and a_z
+            #     # alpha = fields[10:13]
+            #     # checksum = fields[13]
+            #
+            #     # TODO anything more efficient than __float__ conversion?
+            #     self.queue.put((time.time(), tuple(map(float, angles + accel))))
+            #     # TODO: Stop if queue is too big, either integrate the accel values, or drop,
 
             time.sleep(self.sleep_time)
 
@@ -86,7 +102,6 @@ def record_vn1000(filename: str, port: str, stop_flag: Event, counter: Counter =
     with ChunkedWriter(filename, header="time, yaw,pitch,roll,a_x,a_y,a_z") as out:
         data = np.zeros((1, 7,))
         while q.qsize() > 0 or (not stop_flag.is_set()):
-            # print("loop")
             try:
                 d = q.get(block=False)
                 data[0, 0] = d[0]  # Timestamp
@@ -103,15 +118,3 @@ def record_vn1000(filename: str, port: str, stop_flag: Event, counter: Counter =
 
 if __name__ == '__main__':
     pass
-
-# if __name__ == '__main__':
-#     from multiprocessing import Process, Queue
-#
-#     n_samples = int(1e3)
-#     with VN1000() as v:
-#         vn_proc = Process(target=v.stream)
-#         vn_proc.start()
-#         for i in range(n_samples):
-#             print(*(str(x).zfill(6) for x in v.queue.get()))  # v.queue.qsize(),
-#         v.stop_flag.set()
-#         vn_proc.join()
