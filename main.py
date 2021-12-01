@@ -1,4 +1,5 @@
 #! /usr/bin/python3
+import threading
 from multiprocessing import Process, Event
 from multiprocessing.managers import BaseManager
 
@@ -11,7 +12,7 @@ from positioning.counter import Counter
 
 
 def main():
-    run_name = "test_" + strftime('%y_%m_%d-%H-%M_%S')
+    run_name = "rov_pretest_" + strftime('%d%m%y-%H-%M_%S')
     data_dir = f"./data/full/{run_name}/"
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
@@ -28,14 +29,22 @@ def main():
     vn_proc = Process(target=record_vn1000,
                       kwargs={"filename": (data_dir + "imu.csv"), "port": "/dev/ttyUSB0", "stop_flag": stop_flag,
                               "counter": counter, })
-    # om_proc = Process(target=record_omega,
-    #                   kwargs={"filename": (data_dir + "pressure.csv"), "port": "/dev/ttyUSB1", "stop_flag": stop_flag,
-    #                           "counter": counter, })
+
+    def read_kbd_input(filename, stop_flag):
+        print('Ready for keyboard input:')
+        with open(filename, 'a') as f:
+            while True:
+                input_str = input()
+                print(time(), input_str, file=f)
+                print("Note:", time())
+                f.flush()
+
     pico_proc = Process(target=record_pico,
                         kwargs={"filename": (data_dir + "pico.npts"), "stop_flag": stop_flag,
                                 "counter": counter, })
     vn_proc.start()
-    # om_proc.start()
+    inputThread = threading.Thread(target=read_kbd_input, args=((data_dir + "times.log"), None,), daemon=True)
+    inputThread.start()
     pico_proc.start()
 
     print("Started: press Control+C to stop")
@@ -48,7 +57,6 @@ def main():
         pass
 
     stop_flag.set()
-    # om_proc.join()
     vn_proc.join()
     # pico_proc.join()  # TODO: Figure out how to stop pico streaming, or to start unlimited length streaming
 

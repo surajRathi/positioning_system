@@ -52,10 +52,11 @@ class VN1000:
                 angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame
                 accel = fields[4:7]  # IN NED frame !!!!!!!
                 yaw_rate = fields[7:10]
+                yaw_rate[2] = yaw_rate[2][:yaw_rate[2].rfind('*')]
                 # checksum = fields[10]
 
                 # TODO anything more efficient than __float__ conversion?
-                self.queue.put((time.time(), tuple(map(float, angles + accel))))
+                self.queue.put((time.time(), tuple(map(float, angles + accel + yaw_rate))))
                 # TODO: Stop if queue is too big, either integrate the accel values, or drop,
 
             # while len(self.received) > 1:
@@ -99,8 +100,8 @@ def record_vn1000(filename: str, port: str, stop_flag: Event, counter: Counter =
     om_proc = Process(target=run_vn1000, args=(port, q, stop_flag))
     om_proc.start()
     print("started vn1000 proc")
-    with ChunkedWriter(filename, header="time, yaw,pitch,roll,a_x,a_y,a_z") as out:
-        data = np.zeros((1, 7,))
+    with ChunkedWriter(filename, header="time, yaw, pitch, roll, a_n, a_e, a_d, w_y, w_p, w_r") as out:
+        data = np.zeros((1, 10,))
         while q.qsize() > 0 or (not stop_flag.is_set()):
             try:
                 d = q.get(block=False)

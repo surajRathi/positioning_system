@@ -1,45 +1,45 @@
-from itertools import count
-from multiprocessing import Process, Queue, Event
+#! /usr/bin/python3
+from multiprocessing import Process, Event
+from multiprocessing.managers import BaseManager
 
-import numpy as np
+from time import time, sleep, strftime
+import os
 
-from positioning.VN1000 import VN1000
-from positioning.file_helper import ChunkedWriter
-
-
-def run_vn1000(queue: Queue, stop_flag: Event):
-    from positioning.VN1000 import VN1000
-    device = VN1000(port='COM6', queue=queue, stop_flag=stop_flag)
-
-    with device as v:
-        v.stream()
-
-    print("Done")
+from positioning.VN1000 import record_vn1000
+from positioning.counter import Counter
 
 
 def main():
-    filename = "./data/unsorted/wintest_vn1000_sample.csv"
+    run_name = "air_enclosure_long_test_" + strftime('%d%m%y-%H-%M_%S')
+    data_dir = f"./data/imu_tests/{run_name}/"
+    if not os.path.exists(data_dir):
+        os.makedirs(data_dir)
 
-    seconds = 10  # int or None
-    print(f"Reading for {seconds} seconds.")
+    BaseManager.register('Counter', Counter)
+    m = BaseManager()
+    m.start()
+    counter = m.Counter()
 
-    data = np.zeros((1, 6,))
+    counter.set_t(time())
 
-    q = Queue()
-    stop = Event()
-    vn_proc = Process(target=run_vn1000, args=(q, stop))
+    stop_flag = Event()
+
+    vn_proc = Process(target=record_vn1000,
+                      kwargs={"filename": (data_dir + "imu.csv"), "port": "/dev/ttyUSB0", "stop_flag": stop_flag,
+                              "counter": counter, })
     vn_proc.start()
-    with ChunkedWriter(filename, header="yaw,pitch,roll,a_x,a_y,a_z") as out:
-        for i in (count(start=0) if seconds is None else range(int(seconds * 80))):
-            d = q.get()
-            data[0, :] = d
-            out.write(data)
-            if i % (40 * 60 * 5) == 0:
-                print(i)
-                print(q.qsize())
 
-        stop.set()
-        vn_proc.join()
+    print("Started: press Control+C to stop")
+    try:
+        for i in range(100):
+            sleep(2)
+            print(str(counter))
+    except KeyboardInterrupt:
+        print("Keyboard Interrupt, stopping.")
+
+    stop_flag.set()
+    vn_proc.join()
+    print("Recorded: ", str(counter))
 
 
 if __name__ == '__main__':
