@@ -59,26 +59,6 @@ class VN1000:
                 self.queue.put((time.time(), tuple(map(float, angles + accel + yaw_rate))))
                 # TODO: Stop if queue is too big, either integrate the accel values, or drop,
 
-            # while len(self.received) > 1:
-            #     line = self.received.pop(0)
-            #     if len(line) != 121 or line[0:6] != '$VNYMR':
-            #         continue
-            #     # if not crc_check(line):
-            #     #     continue
-            #
-            #     fields = line.split(',')
-            #
-            #     # msg_type = fields[0]  # $VNYMR
-            #     angles = fields[1:4]  # yaw, pitch, roll in the local North, East, Down frame
-            #     # mag = fields[4:7]
-            #     accel = fields[7:10]  # a_x, a_y, and a_z
-            #     # alpha = fields[10:13]
-            #     # checksum = fields[13]
-            #
-            #     # TODO anything more efficient than __float__ conversion?
-            #     self.queue.put((time.time(), tuple(map(float, angles + accel))))
-            #     # TODO: Stop if queue is too big, either integrate the accel values, or drop,
-
             time.sleep(self.sleep_time)
 
     def __exit__(self, exc_type, exc_val, exc_tb):

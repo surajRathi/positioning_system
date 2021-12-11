@@ -12,8 +12,9 @@ from positioning.counter import Counter
 
 
 def main():
-    run_name = "rov_pretest_" + strftime('%d%m%y-%H-%M_%S')
+    run_name = "name_of_the_test_underscore_" + strftime('%d%m%y-%H-%M_%S')
     data_dir = f"./data/full/{run_name}/"
+    print(run_name)
     if not os.path.exists(data_dir):
         os.makedirs(data_dir)
 
@@ -36,7 +37,7 @@ def main():
             while True:
                 input_str = input()
                 print(time(), input_str, file=f)
-                print("Note:", time())
+                print("Note:", time(), input_str)
                 f.flush()
 
     pico_proc = Process(target=record_pico,

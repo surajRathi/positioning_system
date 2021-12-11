@@ -31,7 +31,7 @@ class FileLoader:
 def write_csv(filename: str, arr: np.array, delimiter: str = ',', header=''):
     np.savetxt(filename, arr, delimiter=delimiter, header=header)
 
-
+# For normal CSV
 class ChunkedWriter:
     # TODO: Make sure the right number of columns in each chunk
     def __init__(self, filename, header=None, delimiter=','):
@@ -104,6 +104,7 @@ class ChunkedNPStackReader:
         self.file.close()
 
 
+#  For Picoscope
 class ChunkedNPTStackWriter:
     def __init__(self, filename, delimiter=','):
         self.filename = filename

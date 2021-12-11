@@ -81,6 +81,14 @@ class Picoscope:
                                                      analogue_offset)
         pf.assert_pico_ok(self.status["setChE"])
 
+        self.status["setChF"] = ps.ps4000aSetChannel(self.chandle,
+                                                     ps.PS4000A_CHANNEL['PS4000A_CHANNEL_E'],
+                                                     enabled,
+                                                     coupling_type,
+                                                     self.channel_range,
+                                                     analogue_offset)
+        pf.assert_pico_ok(self.status["setChF"])
+
         self.initialized = True
 
     def _initialize_buffers(self):
@@ -92,6 +100,7 @@ class Picoscope:
         self._buffers['C'] = np.zeros(shape=self.buffer_size, dtype=np.int16)
         self._buffers['D'] = np.zeros(shape=self.buffer_size, dtype=np.int16)
         self._buffers['E'] = np.zeros(shape=self.buffer_size, dtype=np.int16)
+        self._buffers['F'] = np.zeros(shape=self.buffer_size, dtype=np.int16)
 
         memory_segment = 0
 
@@ -152,6 +161,15 @@ class Picoscope:
                                                                   memory_segment,
                                                                   ps.PS4000A_RATIO_MODE['PS4000A_RATIO_MODE_NONE'])
         pf.assert_pico_ok(self.status["setDataBuffersE"])
+        self.status["setDataBuffersF"] = ps.ps4000aSetDataBuffers(self.chandle,
+                                                                  ps.PS4000A_CHANNEL['PS4000A_CHANNEL_F'],
+                                                                  self._buffers['F'].ctypes.data_as(
+                                                                      ctypes.POINTER(ctypes.c_int16)),
+                                                                  None,
+                                                                  self.buffer_size,
+                                                                  memory_segment,
+                                                                  ps.PS4000A_RATIO_MODE['PS4000A_RATIO_MODE_NONE'])
+        pf.assert_pico_ok(self.status["setDataBuffersF"])
 
         self.buffers_initialized = True
 
@@ -221,12 +239,13 @@ class Picoscope:
             sourceEnd = startIndex + noOfSamples
 
             if sourceEnd == self.buffer_size:
-                out = np.empty((self.buffer_size, 5), dtype=np.int16)
+                out = np.empty((self.buffer_size, 6), dtype=np.int16)
                 out[:, 0] = self._buffers['A'][:] * conversion_factor
                 out[:, 1] = self._buffers['B'][:] * conversion_factor
                 out[:, 2] = self._buffers['C'][:] * conversion_factor
                 out[:, 3] = self._buffers['D'][:] * conversion_factor
                 out[:, 4] = self._buffers['E'][:] * conversion_factor
+                out[:, 5] = self._buffers['F'][:] * conversion_factor
                 self.queue.put((time.time(), out))
                 # print(self.queue.qsize())
 
