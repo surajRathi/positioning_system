@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2">
+    <Document id="43">
+        <Style id="46">
+            <LineStyle id="47">
+                <colorMode>normal</colorMode>
+                <width>3</width>
+            </LineStyle>
+        </Style>
+        <open>1</open>
+        <Placemark id="45">
+            <name>D:/28_06_2021\5</name>
+            <styleUrl>#46</styleUrl>
+            <LineString id="44">
+                <coordinates>83.30236053466797,17.69142723083496,0.0 83.30236053466797,17.69143295288086,0.0 83.30236053466797,17.691436767578125,0.0 83.30236053466797,17.691434860229492,0.0 83.30236053466797,17.691438674926758,0.0</coordinates>
+            </LineString>
+        </Placemark>
+    </Document>
+</kml>
