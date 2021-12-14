@@ -6,7 +6,7 @@ from queue import Empty
 
 import numpy as np
 import serial
-import time
+
 from positioning.counter import Counter
 from positioning.file_helper import ChunkedWriter
 
