@@ -11,10 +11,13 @@ from positioning.async_picoscope import record_pico
 from positioning.counter import Counter
 
 
-## How to use?
+# How to use?
 # Comment out the non required processes
-# Run the python file
-# If picoscope is being used,
+# and run
+
+# TODO:
+# Figure out this mess of threads / process and windows compatibility
+
 def read_kbd_input(filename, stop_flag):
     print('Ready for keyboard input:')
     with open(filename, 'a') as f:

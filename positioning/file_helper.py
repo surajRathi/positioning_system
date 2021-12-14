@@ -28,9 +28,6 @@ class FileLoader:
         return np.loadtxt(self.filename, skiprows=self.i, max_rows=self.chunk_size, delimiter=self.delimiter)
 
 
-def write_csv(filename: str, arr: np.array, delimiter: str = ',', header=''):
-    np.savetxt(filename, arr, delimiter=delimiter, header=header)
-
 # For normal CSV
 class ChunkedWriter:
     # TODO: Make sure the right number of columns in each chunk
@@ -49,56 +46,9 @@ class ChunkedWriter:
 
     def write(self, arr):
         if self.file is None:
-            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedWrite('output.csv') as cw: ```")
+            raise Exception(
+                "Use the context manager interface with this object, i.e. ```with ChunkedWrite('output.csv') as cw: ```")
         np.savetxt(self.file, arr, delimiter=self.delimiter)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.file.close()
-
-
-class ChunkedNPStackWriter:
-    def __init__(self, filename, delimiter=','):
-        self.filename = filename
-        self.file = None
-
-    def __enter__(self):
-        print("Opening npstack file")
-        open(self.filename, 'w').close()
-        self.file = open(self.filename, 'ab')
-        return self
-
-    def write(self, arr):
-        if self.file is None:
-            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackWriter('output.csv') as cw: ```")
-        np.save(self.file, arr)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.file.close()
-
-
-class ChunkedNPStackReader:
-    def __init__(self, filename, delimiter=','):
-        self.filename = filename
-        self.file = None
-
-    def __enter__(self):
-        print("Opening npstack file")
-        self.file = open(self.filename, 'rb')
-        return self
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        if self.file is None:
-            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackReader('output.csv') as cr: ```")
-        try:
-            return np.load(self.file)
-        except ValueError:
-            raise StopIteration()
-
-    def stream(self):
-        return np.vstack([arr for arr in self])
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.file.close()
@@ -118,7 +68,8 @@ class ChunkedNPTStackWriter:
 
     def write(self, t, arr):
         if self.file is None:
-            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackWriter('output.csv') as cw: ```")
+            raise Exception(
+                "Use the context manager interface with this object, i.e. ```with ChunkedNPStackWriter('output.csv') as cw: ```")
         # print("Writing npst", t)
         self.file.write(struct.pack('<d', t))
         # print("Writing npst", arr.shape)
@@ -129,6 +80,7 @@ class ChunkedNPTStackWriter:
         self.file.close()
 
 
+#  DEPRECATED: See the jupyter notebooks
 class ChunkedNPTStackReader:
     def __init__(self, filename, delimiter=','):
         self.filename = filename
@@ -140,12 +92,12 @@ class ChunkedNPTStackReader:
         print("Opening npstack file")
         import io
         if isinstance(self.filename, io.BufferedReader):
-          array_file = io.BytesIO()
-          array_file.write(self.filename.read())
-          array_file.seek(0)
-          self.file = array_file
+            array_file = io.BytesIO()
+            array_file.write(self.filename.read())
+            array_file.seek(0)
+            self.file = array_file
         else:
-          self.file = open(self.filename, 'rb')
+            self.file = open(self.filename, 'rb')
         return self
 
     def __iter__(self):
@@ -153,7 +105,8 @@ class ChunkedNPTStackReader:
 
     def __next__(self):
         if self.file is None:
-            raise Exception("Use the context manager interface with this object, i.e. ```with ChunkedNPStackReader('output.csv') as cr: ```")
+            raise Exception(
+                "Use the context manager interface with this object, i.e. ```with ChunkedNPStackReader('output.csv') as cr: ```")
         try:
             t = self.time_unpack(self.file.read(self.time_len))
             arr = np.load(self.file)
