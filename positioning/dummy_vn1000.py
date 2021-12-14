@@ -1,3 +1,5 @@
+# Mostly useless file
+
 import queue
 import time
 from multiprocessing import Queue, Event

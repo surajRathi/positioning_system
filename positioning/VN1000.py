@@ -81,12 +81,12 @@ def record_vn1000(filename: str, port: str, stop_flag: Event, counter: Counter =
     om_proc.start()
     print("started vn1000 proc")
     with ChunkedWriter(filename, header="time, yaw, pitch, roll, a_n, a_e, a_d, w_y, w_p, w_r") as out:
-        data = np.zeros((1, 10,))
+        data = np.zeros((1, 10,))  # [1, len([t] + data)]
         while q.qsize() > 0 or (not stop_flag.is_set()):
             try:
                 d = q.get(block=False)
                 data[0, 0] = d[0]  # Timestamp
-                data[0, 1:] = d[1]
+                data[0, 1:] = d[1]  # Data
                 out.write(data)
                 counter.inc_imu()
             except Empty:

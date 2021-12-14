@@ -9,8 +9,8 @@ class Counter:
     imu: int = 0
     pres: int = 0
 
-    def set_t(self, time: float):
-        self.t_start = time
+    def set_t(self, t_start: float):
+        self.t_start = t_start
 
     def inc_pico(self):
         self.pico += 1

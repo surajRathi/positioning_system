@@ -200,7 +200,8 @@ class Picoscope:
         num_buffers_to_receive = int(n_samples // self.buffer_size)
         total_samples = self.buffer_size * num_buffers_to_receive
 
-        print(f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds and {num_buffers_to_receive} buffers.")
+        print(
+            f"Getting {total_samples} samples with buffer size {self.buffer_size} for {total_samples // 1e6} seconds and {num_buffers_to_receive} buffers.")
 
         # Begin streaming mode:
         sample_interval = ctypes.c_int32(1)
@@ -281,6 +282,7 @@ class Picoscope:
         print("<<< Closed Picoscope")
 
 
+# Run the picoscope and write to the queue
 def run_pico(queue: Queue, stop_flag: Event):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     # Buffer size:
@@ -291,6 +293,7 @@ def run_pico(queue: Queue, stop_flag: Event):
             p.stream(int(1e6 * 60))
 
 
+# Run run_pico and record that to filename
 def record_pico(filename: str, stop_flag: Event, counter: Counter = Counter()):
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
@@ -334,6 +337,6 @@ def record_pico(filename: str, stop_flag: Event, counter: Counter = Counter()):
 #     proc.join()
 
 
-if __name__ == '__main__':
-    # main()
-    pass
+# if __name__ == '__main__':
+#     # main()
+#     pass
