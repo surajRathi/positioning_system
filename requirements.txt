@@ -1,29 +1,14 @@
-# cycler==0.10.0
-# future==0.18.2
-# iso8601==0.1.16
-# kiwisolver==1.3.1
-# matplotlib==3.4.3
-# numpy==1.21.2
-# pandas==1.3.2
-# picosdk==1.0
-# Pillow==8.3.1
-# pyparsing==2.4.7
-# pyserial==3.5
-# python-dateutil==2.8.2
-# pytz==2021.1
-# PyYAML==5.4.1
-# scipy==1.7.1
-# six==1.16.0
-
 future==0.18.2
+gdown==4.2.0
 iso8601==0.1.16
-matplotlib==3.4.3
-pandas==1.3.2
+jupyter==1.0.0
+jupyter-contrib-nbextensions==0.5.1
 picosdk==1.0
+pip-chill==1.0.1
+pyqt5==5.15.6
 pyserial==3.5
-pyyaml==5.4.1
-scipy==1.7.1
-
-numpy~=1.21.2
-requests~=2.26.0
-websockets~=10.0
+pysocks==1.7.1
+pywavelets==1.1.1
+seaborn==0.11.2
+websockets==10.0
+yapf==0.31.0
